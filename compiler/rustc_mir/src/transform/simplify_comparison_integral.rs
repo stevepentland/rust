@@ -46,7 +46,7 @@ impl<'tcx> MirPass<'tcx> for SimplifyComparisonIntegral {
                         .expect("if we have an evaluated constant we must know the layout");
                     int.assert_bits(layout.size)
                 }
-                Scalar::Ptr(_) => continue,
+                Scalar::Ptr(..) => continue,
             };
             const FALSE: u128 = 0;
 
@@ -205,13 +205,13 @@ fn find_branch_value_info<'tcx>(
     match (left, right) {
         (Constant(branch_value), Copy(to_switch_on) | Move(to_switch_on))
         | (Copy(to_switch_on) | Move(to_switch_on), Constant(branch_value)) => {
-            let branch_value_ty = branch_value.literal.ty;
+            let branch_value_ty = branch_value.literal.ty();
             // we only want to apply this optimization if we are matching on integrals (and chars), as it is not possible to switch on floats
             if !branch_value_ty.is_integral() && !branch_value_ty.is_char() {
                 return None;
             };
-            let branch_value_scalar = branch_value.literal.val.try_to_scalar()?;
-            Some((branch_value_scalar, branch_value_ty, *to_switch_on))
+            let branch_value_scalar = branch_value.literal.try_to_scalar()?;
+            Some((branch_value_scalar.into(), branch_value_ty, *to_switch_on))
         }
         _ => None,
     }

@@ -1,8 +1,9 @@
-// ignore-tidy-linelength
 #![feature(const_ptr_offset)]
 use std::ptr;
 
 // normalize-stderr-test "alloc\d+" -> "allocN"
+// normalize-stderr-test "0x7f+" -> "0x7f..f"
+
 
 pub const BEFORE_START: *const u8 = unsafe { (&0u8 as *const u8).offset(-1) }; //~NOTE
 pub const AFTER_END: *const u8 = unsafe { (&0u8 as *const u8).offset(2) }; //~NOTE
