@@ -1,8 +1,5 @@
-// edition:2018
-// FIXME: run-rustfix waiting on multi-span suggestions
-
 #![warn(clippy::needless_borrow)]
-#![allow(clippy::needless_borrowed_reference)]
+#![allow(clippy::needless_borrowed_reference, clippy::explicit_auto_deref)]
 
 fn f1(_: &str) {}
 macro_rules! m1 {
@@ -58,18 +55,22 @@ fn main() {
     // Err, reference to a &String
     let _: &String = match Some(&x) {
         Some(ref x) => x,
+        //~^ needless_borrow
         None => return,
     };
 
     // Err, reference to a &String.
     let _: &String = match Some(&x) {
         Some(ref x) => *x,
+        //~^ needless_borrow
         None => return,
     };
 
     // Err, reference to a &String
     let _: &String = match Some(&x) {
         Some(ref x) => {
+            //~^ needless_borrow
+
             f1(x);
             f1(*x);
             x
@@ -80,16 +81,21 @@ fn main() {
     // Err, reference to a &String
     match Some(&x) {
         Some(ref x) => m1!(x),
+        //~^ needless_borrow
         None => return,
     };
 
     // Err, reference to a &String
     let _ = |&ref x: &&String| {
+        //~^ needless_borrow
+
         let _: &String = x;
     };
 
     // Err, reference to a &String
     let (ref y,) = (&x,);
+    //~^ needless_borrow
+
     let _: &String = *y;
 
     let y = &&x;
@@ -100,6 +106,7 @@ fn main() {
     // Err, reference to a &u32. Don't suggest adding a reference to the field access.
     let _: u32 = match Some(&x) {
         Some(ref x) => x.0,
+        //~^ needless_borrow
         None => return,
     };
 
@@ -110,12 +117,15 @@ fn main() {
     // Err, reference to &u32.
     let _: &u32 = match E::A(&0) {
         E::A(ref x) | E::B(ref x) => *x,
+        //~^ needless_borrow
     };
 
     // Err, reference to &String.
     if_chain! {
         if true;
         if let Some(ref x) = Some(&String::new());
+        //~^ needless_borrow
+
         then {
             f1(x);
         }
@@ -124,6 +134,8 @@ fn main() {
 
 // Err, reference to a &String
 fn f2<'a>(&ref x: &&'a String) -> &'a String {
+    //~^ needless_borrow
+
     let _: &String = x;
     *x
 }
@@ -131,6 +143,8 @@ fn f2<'a>(&ref x: &&'a String) -> &'a String {
 trait T1 {
     // Err, reference to a &String
     fn f(&ref x: &&String) {
+        //~^ needless_borrow
+
         let _: &String = x;
     }
 }
@@ -139,6 +153,8 @@ struct S;
 impl T1 for S {
     // Err, reference to a &String
     fn f(&ref x: &&String) {
+        //~^ needless_borrow
+
         let _: &String = *x;
     }
 }

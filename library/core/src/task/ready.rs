@@ -17,7 +17,7 @@
 ///     let fut = Pin::new(&mut fut);
 ///
 ///     let num = ready!(fut.poll(cx));
-///     # drop(num);
+///     # let _ = num;
 ///     // ... use num
 ///
 ///     Poll::Ready(())
@@ -39,13 +39,13 @@
 ///     Poll::Ready(t) => t,
 ///     Poll::Pending => return Poll::Pending,
 /// };
-///     # drop(num);
+///     # let _ = num; // to silence unused warning
 ///     # // ... use num
 ///     #
 ///     # Poll::Ready(())
 /// # }
 /// ```
-#[stable(feature = "ready_macro", since = "1.56.0")]
+#[stable(feature = "ready_macro", since = "1.64.0")]
 #[rustc_macro_transparency = "semitransparent"]
 pub macro ready($e:expr) {
     match $e {

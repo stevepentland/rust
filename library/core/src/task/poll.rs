@@ -2,12 +2,14 @@
 
 use crate::convert;
 use crate::ops::{self, ControlFlow};
-use crate::result::Result;
 
 /// Indicates whether a value is available or if the current task has been
 /// scheduled to receive a wakeup instead.
+///
+/// This is returned by [`Future::poll`](core::future::Future::poll).
 #[must_use = "this `Poll` may be a `Pending` variant, which should be handled"]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[lang = "Poll"]
 #[stable(feature = "futures_api", since = "1.36.0")]
 pub enum Poll<T> {
     /// Represents that a value is immediately ready.
@@ -30,9 +32,10 @@ impl<T> Poll<T> {
     ///
     /// # Examples
     ///
-    /// Converts a `Poll<`[`String`]`>` into an `Poll<`[`usize`]`>`, consuming the original:
+    /// Converts a <code>Poll<[String]></code> into a <code>Poll<[usize]></code>, consuming
+    /// the original:
     ///
-    /// [`String`]: ../../std/string/struct.String.html
+    /// [String]: ../../std/string/struct.String.html "String"
     /// ```
     /// # use core::task::Poll;
     /// let poll_some_string = Poll::Ready(String::from("Hello, World!"));
@@ -42,6 +45,7 @@ impl<T> Poll<T> {
     /// assert_eq!(poll_some_len, Poll::Ready(13));
     /// ```
     #[stable(feature = "futures_api", since = "1.36.0")]
+    #[inline]
     pub fn map<U, F>(self, f: F) -> Poll<U>
     where
         F: FnOnce(T) -> U,
@@ -109,6 +113,7 @@ impl<T, E> Poll<Result<T, E>> {
     /// assert_eq!(squared, Poll::Ready(Ok(144)));
     /// ```
     #[stable(feature = "futures_api", since = "1.36.0")]
+    #[inline]
     pub fn map_ok<U, F>(self, f: F) -> Poll<Result<U, E>>
     where
         F: FnOnce(T) -> U,
@@ -120,7 +125,7 @@ impl<T, E> Poll<Result<T, E>> {
         }
     }
 
-    /// Maps a `Poll::Ready<Result<T, E>>` to `Poll::Ready<Result<T, F>>` by
+    /// Maps a `Poll::Ready<Result<T, E>>` to `Poll::Ready<Result<T, U>>` by
     /// applying a function to a contained `Poll::Ready(Err)` value, leaving all other
     /// variants untouched.
     ///
@@ -136,6 +141,7 @@ impl<T, E> Poll<Result<T, E>> {
     /// assert_eq!(res, Poll::Ready(Err(0)));
     /// ```
     #[stable(feature = "futures_api", since = "1.36.0")]
+    #[inline]
     pub fn map_err<U, F>(self, f: F) -> Poll<Result<T, U>>
     where
         F: FnOnce(E) -> U,
@@ -164,6 +170,7 @@ impl<T, E> Poll<Option<Result<T, E>>> {
     /// assert_eq!(squared, Poll::Ready(Some(Ok(144))));
     /// ```
     #[stable(feature = "poll_map", since = "1.51.0")]
+    #[inline]
     pub fn map_ok<U, F>(self, f: F) -> Poll<Option<Result<U, E>>>
     where
         F: FnOnce(T) -> U,
@@ -193,6 +200,7 @@ impl<T, E> Poll<Option<Result<T, E>>> {
     /// assert_eq!(res, Poll::Ready(Some(Err(0))));
     /// ```
     #[stable(feature = "poll_map", since = "1.51.0")]
+    #[inline]
     pub fn map_err<U, F>(self, f: F) -> Poll<Option<Result<T, U>>>
     where
         F: FnOnce(E) -> U,
@@ -207,8 +215,9 @@ impl<T, E> Poll<Option<Result<T, E>>> {
 }
 
 #[stable(feature = "futures_api", since = "1.36.0")]
-impl<T> From<T> for Poll<T> {
-    /// Convert to a `Ready` variant.
+#[rustc_const_unstable(feature = "const_convert", issue = "143773")]
+impl<T> const From<T> for Poll<T> {
+    /// Moves the value into a [`Poll::Ready`] to make a `Poll<T>`.
     ///
     /// # Example
     ///
@@ -221,8 +230,8 @@ impl<T> From<T> for Poll<T> {
     }
 }
 
-#[unstable(feature = "try_trait_v2", issue = "84277")]
-impl<T, E> ops::TryV2 for Poll<Result<T, E>> {
+#[unstable(feature = "try_trait_v2", issue = "84277", old_name = "try_trait")]
+impl<T, E> ops::Try for Poll<Result<T, E>> {
     type Output = Poll<T>;
     type Residual = Result<convert::Infallible, E>;
 
@@ -241,7 +250,7 @@ impl<T, E> ops::TryV2 for Poll<Result<T, E>> {
     }
 }
 
-#[unstable(feature = "try_trait_v2", issue = "84277")]
+#[unstable(feature = "try_trait_v2", issue = "84277", old_name = "try_trait")]
 impl<T, E, F: From<E>> ops::FromResidual<Result<convert::Infallible, E>> for Poll<Result<T, F>> {
     #[inline]
     fn from_residual(x: Result<convert::Infallible, E>) -> Self {
@@ -251,8 +260,8 @@ impl<T, E, F: From<E>> ops::FromResidual<Result<convert::Infallible, E>> for Pol
     }
 }
 
-#[unstable(feature = "try_trait_v2", issue = "84277")]
-impl<T, E> ops::TryV2 for Poll<Option<Result<T, E>>> {
+#[unstable(feature = "try_trait_v2", issue = "84277", old_name = "try_trait")]
+impl<T, E> ops::Try for Poll<Option<Result<T, E>>> {
     type Output = Poll<Option<T>>;
     type Residual = Result<convert::Infallible, E>;
 
@@ -272,7 +281,7 @@ impl<T, E> ops::TryV2 for Poll<Option<Result<T, E>>> {
     }
 }
 
-#[unstable(feature = "try_trait_v2", issue = "84277")]
+#[unstable(feature = "try_trait_v2", issue = "84277", old_name = "try_trait")]
 impl<T, E, F: From<E>> ops::FromResidual<Result<convert::Infallible, E>>
     for Poll<Option<Result<T, F>>>
 {

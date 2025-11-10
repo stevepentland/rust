@@ -1,4 +1,5 @@
-// edition:2018
+//@ check-pass
+
 #![allow(clippy::never_loop)]
 
 async fn f() {
